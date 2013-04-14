@@ -1,0 +1,196 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package fi.helsinki.bibtex.crawler.storage.support;
+
+import fi.helsinki.bibtex.crawler.storage.CollaborationGraphDB;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+/**
+ *
+ * @author rodionefremov
+ */
+public class CollaborationSQLiteDB implements CollaborationGraphDB {
+    private Connection conn;
+
+    /**
+     * Constructs a new DB-implementation using SQLite.
+     *
+     * @param filename the database file.
+     */
+    public CollaborationSQLiteDB(String filename) throws ClassNotFoundException,
+                                            SQLException {
+        Class.forName("org.sqlite.JDBC");
+        open(filename);
+
+        /* Initalize the opened DB if uninitialized. */
+        if (!checkDB()) {
+            initialize();
+        }
+    }
+
+    @Override
+    public boolean addAuthor(String id, String name) {
+        try {
+            PreparedStatement st = conn.prepareStatement(
+                    "INSERT INTO Authors (id, name) VALUES (?, ?)"
+                    );
+            st.setString(1, id);
+            st.setString(2, name);
+            st.execute();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            System.err.println(e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean addPaper(String id, String name) {
+        try {
+            PreparedStatement st = conn.prepareStatement(
+                    "INSERT INTO Papers (id, name) VALUES (?, ?)"
+                    );
+            st.setString(1, id);
+            st.setString(2, name);
+            st.execute();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            System.err.println(e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean associate(String authorId, String paperId) {
+        try {
+            PreparedStatement st = conn.prepareStatement(
+                    "INSERT INTO Contribs (authorId, paperId) VALUES (?, ?)"
+                    );
+            st.setString(1, authorId);
+            st.setString(2, paperId);
+            st.execute();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            System.err.println(e);
+            return false;
+        }
+    }
+
+    /**
+     * Opens a connection in this <code>DB</code>.
+     *
+     * @param filename the filename or path for the binary database file.
+     */
+    private void open(String filename) throws SQLException {
+        if (filename == null) {
+            throw new IllegalArgumentException("Filename may not be null");
+        }
+
+        conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
+        conn.setAutoCommit(false);
+    }
+
+    /**
+     * Check whether this <code>DB</code>-implementation is initialized.
+     */
+    private boolean checkDB() {
+        try {
+            Statement st = conn.createStatement();
+            st.execute("SELECT * FROM Authors LIMIT 1;");
+            st.execute("SELECT * FROM Papers LIMIT 1;");
+            st.execute("SELECT * FROM Contribs LIMIT 1;");
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Creates the tables in this <code>DB</code>.
+     */
+    private void initialize() throws SQLException {
+        Statement st = conn.createStatement();
+
+        st.executeUpdate(
+                "CREATE TABLE Authors(" +
+                "   id   TEXT NOT NULL PRIMARY KEY," +
+                "   name TEXT NOT NULL" +
+                ");"
+                );
+
+        st.executeUpdate(
+                "CREATE TABLE Papers(" +
+                "   id   TEXT NOT NULL PRIMARY KEY," +
+                "   name TEXT NOT NULL" +
+                ");"
+                );
+
+        st.executeUpdate(
+                "CREATE TABLE Contribs(" +
+                "   authorId TEXT NOT NULL," +
+                "   paperId TEXT NOT NULL," +
+                "   PRIMARY KEY (authorId, paperId)," +
+                "   FOREIGN KEY (authorId) REFERENCES Authors(id)," +
+                "   FOREIGN KEY (paperId)  REFERENCES Papers(id)" +
+                ");"
+                );
+
+        conn.commit();
+    }
+
+    /**
+     * This class comprises the iterator object for <code>SQLiteDB</code>.
+     */
+    private class DBIterator implements Iterator<String> {
+        private boolean nextp = true;
+        private ResultSet rs;
+
+        DBIterator(ResultSet rs) {
+            try {
+                nextp = rs.next();
+            } catch (SQLException ex) {
+                nextp = false;
+            }
+
+            this.rs = rs;
+        }
+
+        public boolean hasNext() {
+            return nextp;
+        }
+
+        public String next() {
+            if (!nextp) {
+                throw new NoSuchElementException("Iteration overflow.");
+            }
+
+            try {
+                String bibtexRef = rs.getString("reftext");
+                nextp = rs.next();
+                return bibtexRef;
+            } catch (SQLException e) {
+                nextp = false;
+            }
+
+            return null;
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException(
+                    "Iterator's remove() not implemented."
+                    );
+        }
+    }
+}

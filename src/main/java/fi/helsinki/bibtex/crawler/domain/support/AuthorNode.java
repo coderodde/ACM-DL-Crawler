@@ -98,6 +98,9 @@ public class AuthorNode extends Node<AuthorNode> {
         private static final String XPATH_PAPER_A =
                 "//a[contains(@href,'citation.cfm')]";
 
+        private static final String TEXT_LINK_BIBTEX =
+                "BibTeX";
+
         private Iterator<AuthorNode> iter;
 
         NeighborIterator() {
@@ -134,7 +137,7 @@ public class AuthorNode extends Node<AuthorNode> {
             aElements = driver.findElements(By.xpath(XPATH_PAPER_A));
             processPaperList(aElements);
 
-            downloadBibtex(driver);
+            downloadBibtex(driver, timeoutSeconds);
         }
 
         private void navigateToColleaguesPage(HtmlUnitDriver driver,
@@ -232,8 +235,29 @@ public class AuthorNode extends Node<AuthorNode> {
             }
         }
 
-        private void downloadBibtex(HtmlUnitDriver driver) {
-            
+        private void downloadBibtex(HtmlUnitDriver driver, int timeoutSeconds) {
+            System.out.println("In downloadBibtex(): " + driver.getCurrentUrl());
+            WebElement e = driver.findElement(By.linkText(TEXT_LINK_BIBTEX));
+            e.click();
+
+            WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
+            wait.until(ExpectedConditions
+                       .presenceOfElementLocated(By.tagName("pre")));
+
+            List<WebElement> pres = driver.findElements(By.tagName("pre"));
+            processListOfBibtexReferences(pres);
+        }
+
+        private void processListOfBibtexReferences(List<WebElement> pres) {
+            if (AuthorNode.this.db == null) {
+                return;
+            }
+
+            for (WebElement e : pres) {
+                System.out.println(e.getText());
+                AuthorNode.this.db.addBibtexToPaper(e.getAttribute("id"),
+                                                    e.getText());
+            }
         }
     }
 }

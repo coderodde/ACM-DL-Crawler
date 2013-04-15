@@ -75,6 +75,23 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
     }
 
     @Override
+    public boolean addBibtexToPaper(String id, String bibtex) {
+        try {
+            PreparedStatement st = conn.prepareStatement(
+                    "UPDATE Papers SET bibtex=? WHERE id=?"
+                    );
+            st.setString(1, bibtex);
+            st.setString(2, id);
+            st.executeUpdate();
+            conn.commit();
+            return true;
+        } catch(SQLException e) {
+            System.err.println(e);
+            return false;
+        }
+    }
+
+    @Override
     public boolean associate(String authorId, String paperId) {
         try {
             PreparedStatement st = conn.prepareStatement(

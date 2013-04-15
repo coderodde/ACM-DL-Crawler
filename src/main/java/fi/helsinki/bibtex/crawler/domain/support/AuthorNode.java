@@ -126,13 +126,15 @@ public class AuthorNode extends Node<AuthorNode> {
         private void populate(List<AuthorNode> list, int timeoutSeconds) {
             HtmlUnitDriver driver = new HtmlUnitDriver(true);
             navigateToColleaguesPage(driver, timeoutSeconds);
-
             List<WebElement> aElements = driver.findElements(
                     By.xpath(XPATH_COLLABORATORS_A));
-
             processCoauthorList(aElements, list);
 
             navigateToPaperListPage(driver, timeoutSeconds);
+            aElements = driver.findElements(By.xpath(XPATH_PAPER_A));
+            processPaperList(aElements);
+
+            downloadBibtex(driver);
         }
 
         private void navigateToColleaguesPage(HtmlUnitDriver driver,
@@ -199,9 +201,39 @@ public class AuthorNode extends Node<AuthorNode> {
         }
 
         private void processPaperList(List<WebElement> aElements) {
-            for (WebElement e : aElements) {
-                
+            if (AuthorNode.this.db == null) {
+                return;
             }
+
+            for (WebElement e : aElements) {
+                String href = e.getAttribute("href");
+
+                int i1 = href.indexOf("id=");
+
+                if (i1 < 0) {
+                    continue;
+                }
+
+                int i2 = href.indexOf("&");
+
+                if (i2 < 0) {
+                    i2 = href.length();
+                } else if (i2 < i1) {
+                    continue;
+                }
+
+                String id = href.substring(i1 + "id=".length(), i2);
+                String name = e.getText().trim();
+
+                if (AuthorNode.this.db.addPaper(id, name)) {
+                    System.out.println("Added paper: " + name + " id=" + id);
+                    AuthorNode.this.db.associate(AuthorNode.this.getId(), id);
+                }
+            }
+        }
+
+        private void downloadBibtex(HtmlUnitDriver driver) {
+            
         }
     }
 }

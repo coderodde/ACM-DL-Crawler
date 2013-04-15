@@ -4,6 +4,7 @@
  */
 package fi.helsinki.bibtex.crawler.domain.support;
 
+import fi.helsinki.bibtex.crawler.storage.support.CollaborationSQLiteDB;
 import java.util.Iterator;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -19,10 +20,16 @@ import static org.junit.Assert.*;
 public class AuthorNodeTest {
 
     private static AuthorNode root;
-
+    private static final String DB_FILE = "crawl_1.db";
     @BeforeClass
     public static void setUpClass() {
         root = new AuthorNode("81100552573");
+
+        try {
+            root.setDb(new CollaborationSQLiteDB(DB_FILE));
+        } catch(Exception e) {
+            System.err.println("Could not open DB at file " + DB_FILE);
+        }
     }
 
     @AfterClass

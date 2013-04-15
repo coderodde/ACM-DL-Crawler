@@ -4,6 +4,7 @@
  */
 package fi.helsinki.bibtex.crawler.storage.support;
 
+import fi.helsinki.bibtex.crawler.domain.support.AuthorNode;
 import fi.helsinki.bibtex.crawler.storage.CollaborationGraphDB;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,14 +12,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
  *
  * @author rodionefremov
  */
-public class CollaborationSQLiteDB implements CollaborationGraphDB {
+public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
     private Connection conn;
 
     /**
@@ -88,6 +91,26 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB {
         }
     }
 
+    @Override
+    public List<AuthorNode> listAllAuthors() {
+        List<AuthorNode> list = new ArrayList<AuthorNode>();
+        ResultSet rs = null;
+
+        try {
+            Statement st = conn.createStatement();
+            rs = st.executeQuery("SELECT * FROM Authors;");
+
+            while (rs.next()) {
+                AuthorNode node = new AuthorNode(rs.getString("id"));
+                node.setName(rs.getString("name"));
+                list.add(node);
+            }
+        } catch(SQLException e) {
+            System.err.println(e);
+        }
+
+        return list;
+    }
     /**
      * Opens a connection in this <code>DB</code>.
      *
@@ -133,7 +156,8 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB {
         st.executeUpdate(
                 "CREATE TABLE Papers(" +
                 "   id   TEXT NOT NULL PRIMARY KEY," +
-                "   name TEXT NOT NULL" +
+                "   name TEXT NOT NULL," +
+                "   bibtex TEXT" +
                 ");"
                 );
 

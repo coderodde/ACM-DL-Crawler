@@ -2,6 +2,7 @@ package fi.helsinki.bibtex.crawler.domain.support;
 
 import fi.helsinki.acmcrawler.Magic;
 import fi.helsinki.bibtex.crawler.domain.Node;
+import fi.helsinki.bibtex.crawler.storage.CollaborationGraphDB;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  */
 public class AuthorNode extends Node<AuthorNode> {
     private String id;
+    private CollaborationGraphDB db;
 
     public AuthorNode(String id) {
         super();
@@ -57,6 +59,22 @@ public class AuthorNode extends Node<AuthorNode> {
         return "[Actor node: id=" + id + " name=\"" + name + "\"]";
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public CollaborationGraphDB getDb() {
+        return db;
+    }
+
+    public void setDb(CollaborationGraphDB db) {
+        this.db = db;
+    }
+
     private String getAuthorPageUrl() {
         return getAuthorPageUrlSimple() + Magic.URL_GET_ALL_ARGS;
     }
@@ -76,6 +94,9 @@ public class AuthorNode extends Node<AuthorNode> {
 
         private static final String TEXT_LINK_COLLEAGUES =
                 "See all colleagues of this author";
+
+        private static final String XPATH_PAPER_A =
+                "//a[contains(@href,'citation.cfm')]";
 
         private Iterator<AuthorNode> iter;
 
@@ -104,6 +125,18 @@ public class AuthorNode extends Node<AuthorNode> {
 
         private void populate(List<AuthorNode> list, int timeoutSeconds) {
             HtmlUnitDriver driver = new HtmlUnitDriver(true);
+            navigateToColleaguesPage(driver, timeoutSeconds);
+
+            List<WebElement> aElements = driver.findElements(
+                    By.xpath(XPATH_COLLABORATORS_A));
+
+            processCoauthorList(aElements, list);
+
+            navigateToPaperListPage(driver, timeoutSeconds);
+        }
+
+        private void navigateToColleaguesPage(HtmlUnitDriver driver,
+                                              int timeoutSeconds) {
             driver.get(AuthorNode.this.getAuthorPageUrlSimple());
 
             WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
@@ -120,12 +153,11 @@ public class AuthorNode extends Node<AuthorNode> {
             wait.until(ExpectedConditions
                        .presenceOfElementLocated(
                             By.xpath(XPATH_COLLABORATORS_A)));
+        }
 
-            List<WebElement> coauthorList = driver.findElements(
-                    By.xpath(XPATH_COLLABORATORS_A));
-
-            for (WebElement e : coauthorList) {
-                String name = e.getText();
+        private void processCoauthorList(List<WebElement> aElemList,
+                                         List<AuthorNode> authors) {
+            for (WebElement e : aElemList) {
                 String href = e.getAttribute("href");
 
                 if (href == null) {
@@ -148,7 +180,27 @@ public class AuthorNode extends Node<AuthorNode> {
 
                 AuthorNode neighbor = new AuthorNode(id);
                 neighbor.setName(e.getText());
-                list.add(neighbor);
+                authors.add(neighbor);
+
+                if (db != null) {
+                    db.addAuthor(neighbor.getId(), neighbor.getName());
+                }
+            }
+        }
+
+        private void navigateToPaperListPage(HtmlUnitDriver driver,
+                                             int timeoutSeconds) {
+            driver.get(AuthorNode.this.getAuthorPageUrl());
+
+            WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
+            wait.until(ExpectedConditions
+                    .presenceOfElementLocated(
+                        By.xpath(XPATH_PAPER_A)));
+        }
+
+        private void processPaperList(List<WebElement> aElements) {
+            for (WebElement e : aElements) {
+                
             }
         }
     }

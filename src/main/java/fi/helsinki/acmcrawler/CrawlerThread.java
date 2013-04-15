@@ -1,8 +1,9 @@
 package fi.helsinki.acmcrawler;
 
-import fi.helsinki.bibtex.crawler.domain.ActionType;
-import fi.helsinki.bibtex.crawler.domain.Node;
+import fi.helsinki.acmcrawler.domain.ActionType;
+import fi.helsinki.acmcrawler.domain.Node;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -14,23 +15,23 @@ import java.util.Set;
  */
 public class CrawlerThread<T extends Node<T>> extends Thread {
 
-    private Deque<T>        queue;
-    private Set<T>          visited;
-    private boolean         stop;
-    private long            crawled;
-    private final long      max;
-    private ActionType[]    onDiscovery;
+    private Deque<T>         queue;
+    private Set<T>           visited;
+    private volatile boolean stop;
+    private volatile long    crawled;
+    private final long       max;
+//    private ActionType[]    onDiscovery;
 
     public CrawlerThread(
             List<T> seeds,
             Set<T> visited,
-            long max,
-            ActionType... onDiscovery) {
+            long max/*,
+            ActionType... onDiscovery*/) {
         this.max = max;
         this.queue = new LinkedList<T>();
-        this.queue.addAll(seeds);
-        this.visited = java.util.Collections.synchronizedSet(visited);
+        this.visited = visited;
         markSeedsAsVisited(seeds, this.visited);
+        this.queue.addAll(seeds);
     }
 
     @Override
@@ -42,6 +43,17 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
         stop = true;
     }
 
+    public long getCrawlCount() {
+        if (stop == false) {
+            throw new IllegalStateException(
+                    "CrawlerThread should be stopped first before calling " +
+                    "this operation."
+                    );
+        }
+
+        return crawled;
+    }
+
     private void breadthFirstSearch() {
         while (queue.size() > 0) {
             T node = queue.removeFirst();
@@ -51,6 +63,8 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
                 return;
             }
         }
+
+        stop = true; // in case queue.size() > 0 failed, not stop == true.
     }
 
     private void Expand(T v) {
@@ -69,11 +83,11 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
                 // one more node discovered.
                 visited.add(u);
                 queue.addLast(u);
-
-                // apply actions to new node.
-                for (ActionType action : onDiscovery) {
-                    u.act(action);
-                }
+//
+//                // apply actions to new node.
+//                for (ActionType action : onDiscovery) {
+//                    u.act(action);
+//                }
 
                 ++crawled;
             }
@@ -81,8 +95,18 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
     }
 
     private void markSeedsAsVisited(List<T> seeds, Set<T> visited) {
-        for (T seed : seeds) {
+        Iterator<T> iter = seeds.iterator();
+
+        while (iter.hasNext()) {
+            T seed = iter.next();
+
+            if (crawled >= max) {
+                iter.remove();
+                continue;
+            }
+
             visited.add(seed);
+            ++crawled;
         }
     }
 }

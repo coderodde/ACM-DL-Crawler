@@ -1,7 +1,7 @@
 package fi.helsinki.acmcrawler;
 
 import static fi.helsinki.acmcrawler.Magic.*;
-import fi.helsinki.bibtex.crawler.storage.support.BibTexSQLiteDB;
+import fi.helsinki.acmcrawler.storage.support.BibTexSQLiteDB;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

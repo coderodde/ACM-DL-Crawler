@@ -240,7 +240,7 @@ public class AuthorNode extends Node<AuthorNode> {
             WebElement e = driver.findElement(By.linkText(TEXT_LINK_BIBTEX));
             e.click();
 
-            List<WebElement> pres = driver  .findElements(By.tagName("pre"));
+            List<WebElement> pres = driver.findElements(By.tagName("pre"));
             processListOfBibtexReferences(pres);
         }
 

@@ -21,7 +21,8 @@ import static org.junit.Assert.*;
 public class AuthorNodeTest {
 
     private static AuthorNode root;
-    private static final String DB_FILE = "crawl_1.db";
+    private static final String DB_FILE = ":memory:";
+
     @BeforeClass
     public static void setUpClass() {
         root = new AuthorNode("81100552573");
@@ -30,6 +31,7 @@ public class AuthorNodeTest {
             root.setDb(new CollaborationSQLiteDB(DB_FILE));
         } catch(Exception e) {
             System.err.println("Could not open DB at file " + DB_FILE);
+            fail("DB did not open.");
         }
     }
 

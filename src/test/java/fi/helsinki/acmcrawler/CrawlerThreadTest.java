@@ -48,7 +48,7 @@ public class CrawlerThreadTest {
     @Test
     public void mainTest() {
         List<GraphNode> oneSeed = new LinkedList<GraphNode>();
-        Set<GraphNode> visitedSet = new HashSet<GraphNode>();
+        ThreadSafeSet<GraphNode> visitedSet = new ThreadSafeSet<GraphNode>();
 
         oneSeed.add(graph.get(graph.size() / 2));
 
@@ -67,8 +67,7 @@ public class CrawlerThreadTest {
 
         CrawlerThread<?>[] crawlers = new CrawlerThread<?>[THREADS];
         List<GraphNode> seeds = sampleSeeds(graph, r, THREADS);
-        Set<GraphNode> visitedSet2 =
-                java.util.Collections.synchronizedSet(new HashSet<GraphNode>());
+        ThreadSafeSet<GraphNode> visitedSet2 =new ThreadSafeSet<GraphNode>();
 
         for (int i = 0; i < THREADS; ++i) {
             List<GraphNode> seedList = new ArrayList<GraphNode>(1);

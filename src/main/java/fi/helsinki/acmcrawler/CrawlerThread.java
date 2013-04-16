@@ -1,12 +1,10 @@
 package fi.helsinki.acmcrawler;
 
-import fi.helsinki.acmcrawler.domain.ActionType;
 import fi.helsinki.acmcrawler.domain.Node;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -16,17 +14,12 @@ import java.util.Set;
 public class CrawlerThread<T extends Node<T>> extends Thread {
 
     private Deque<T>         queue;
-    private Set<T>           visited;
+    private ThreadSafeSet<T> visited;
     private volatile boolean stop;
     private volatile long    crawled;
     private final long       max;
-//    private ActionType[]    onDiscovery;
 
-    public CrawlerThread(
-            List<T> seeds,
-            Set<T> visited,
-            long max/*,
-            ActionType... onDiscovery*/) {
+    public CrawlerThread(List<T> seeds, ThreadSafeSet<T> visited, long max) {
         this.max = max;
         this.queue = new LinkedList<T>();
         this.visited = visited;
@@ -79,22 +72,15 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
                 return;
             }
 
-            if (visited.contains(u) == false) {
+            if (visited.containsAndAdd(u) == false) {
                 // one more node discovered.
-                visited.add(u);
                 queue.addLast(u);
-//
-//                // apply actions to new node.
-//                for (ActionType action : onDiscovery) {
-//                    u.act(action);
-//                }
-
                 ++crawled;
             }
         }
     }
 
-    private void markSeedsAsVisited(List<T> seeds, Set<T> visited) {
+    private void markSeedsAsVisited(List<T> seeds, ThreadSafeSet<T> visited) {
         Iterator<T> iter = seeds.iterator();
 
         while (iter.hasNext()) {

@@ -8,5 +8,5 @@ import java.util.List;
  * @version I
  */
 public interface SeedFactory<T extends Node<T>> {
-    List<T> get();
+    List<T> get(int max);
 }

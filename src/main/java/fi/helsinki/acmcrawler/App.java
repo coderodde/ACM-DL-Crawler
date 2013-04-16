@@ -54,11 +54,11 @@ public class App
 
         // Try doing crawling.
 
-        Integer max = DEFAULT_MAX;
+        Long max = DEFAULT_MAX;
 
         if (m.containsKey(COMMAND_MAX)) {
             try {
-                max = Integer.parseInt(m.get(COMMAND_MAX));
+                max = Long.parseLong(m.get(COMMAND_MAX));
             } catch(NumberFormatException e) {
                 System.err.println("Error: " + m.get(COMMAND_MAX) +
                         ": not an integer.");
@@ -91,7 +91,7 @@ public class App
         return 0;
     }
 
-    private static int crawl(String dbFilename, int max) {
+    private static int crawl(String dbFilename, long max) {
         if (max < 1) {
             return 0;
         }
@@ -119,13 +119,14 @@ public class App
 
     }
 
-    private static int doCrawl(BibTexSQLiteDB db, WebDriver wd, int max) {
+    private static int doCrawl(BibTexSQLiteDB db, WebDriver wd, long max) {
         wd.get(URL_BASE + "/" + Magic.URL_JOURNAL_LIST_PAGE);
         List<WebElement> elems = wd.findElements(
                 By.xpath("html/body/div/table/tbody/tr/td[2]/a")
                 );
 
         for (WebElement we : elems) {
+            System.out.println(we.getText());
             HtmlUnitDriver journalDriver = new HtmlUnitDriver(true);
             journalDriver.get(we.getAttribute("href"));
 
@@ -143,7 +144,7 @@ public class App
         return 0;
     }
 
-    private static int crawlJournal(BibTexSQLiteDB db, WebDriver wd, int max) {
+    private static long crawlJournal(BibTexSQLiteDB db, WebDriver wd, long max) {
         if (max < 1) {
             return 0;
         }
@@ -151,7 +152,7 @@ public class App
         List<WebElement> aElements = wd.findElements(By.xpath(
                 "//div[@id='toShowTop10']/ol/li/a"));
 
-        int crawled = 0;
+        long crawled = 0;
 
         if (aElements.size() > 0) {
             for (WebElement we : aElements) {

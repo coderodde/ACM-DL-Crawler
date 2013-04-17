@@ -2,9 +2,9 @@ package fi.helsinki.acmcrawler.domain.support;
 
 import fi.helsinki.acmcrawler.storage.support.CollaborationSQLiteDB;
 import java.util.List;
+import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class DefaultSeedFactoryTest {
 
     private static final String DB_FILE = ":memory:";
-    private static final int MAX_SEEDS = 15;
+    private static final int MAX_SEEDS = 4;
     private static DefaultSeedFactory factory;
 
     @BeforeClass
@@ -34,5 +34,9 @@ public class DefaultSeedFactoryTest {
         System.out.println("get");
         List<AuthorNode> list = factory.get(MAX_SEEDS);
         assertEquals(list.size(), MAX_SEEDS);
+
+        for (AuthorNode a : list) {
+            System.out.println(a);
+        }
     }
 }

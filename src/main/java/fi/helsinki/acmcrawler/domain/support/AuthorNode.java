@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -18,7 +19,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  */
 public class AuthorNode extends Node<AuthorNode> {
     private String id;
-    private CollaborationGraphDB db;
+    private CollaborationGraphDB<AuthorNode> db;
 
     public AuthorNode(String id) {
         super();
@@ -67,11 +68,11 @@ public class AuthorNode extends Node<AuthorNode> {
         this.id = id;
     }
 
-    public CollaborationGraphDB getDb() {
+    public CollaborationGraphDB<AuthorNode> getDb() {
         return db;
     }
 
-    public void setDb(CollaborationGraphDB db) {
+    public void setDb(CollaborationGraphDB<AuthorNode> db) {
         this.db = db;
     }
 
@@ -235,7 +236,7 @@ public class AuthorNode extends Node<AuthorNode> {
             }
         }
 
-        private void downloadBibtex(HtmlUnitDriver driver, int timeoutSeconds) {
+        private void downloadBibtex(WebDriver driver, int timeoutSeconds) {
             System.out.println("In downloadBibtex(): " + driver.getCurrentUrl());
             WebElement e = driver.findElement(By.linkText(TEXT_LINK_BIBTEX));
             e.click();

@@ -23,11 +23,19 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
     private static final String XPATH_JOURNAL_A =
             "//a[contains(@href,'pub.cfm?id=')]";
 
-    private static final String XPATH_TOP10_ARTICLE_A =
-            "//div[@id='toShowTop10']/ol/li/a";
+//    private static final String XPATH_TOP10_ARTICLE_A =
+//            "//div[@id='toShowTop10']/ol/li/a";
 
     private static final String XPATH_AUTHORS_A =
     "//a[contains(@href,'results.cfm?') and contains(@title, 'Search for')]";
+
+    private static final String XPATH_AUTHOR_LINK_A =
+            "//a[contains(@href,'author_page.cfm?id=')]";
+
+    private static final String XPATH_PAPER_LINK_A =
+            "//a[starts-with(@href,'citation.cfm?id=')]";
+
+    private static final String LINKTEXT_BIBTEX = "BibTeX";
 
     private CollaborationGraphDB<AuthorNode> db;
     private List<AuthorNode> list;
@@ -39,14 +47,14 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
 
     @Override
     public List<AuthorNode> get(int max) {
-        if (list != null) {
-            return new ArrayList<AuthorNode>(list);
+        if (this.list != null) {
+            return new ArrayList<AuthorNode>(this.list);
         }
 
         this.max = max;
-        list = new ArrayList<AuthorNode>();
+        this.list = new ArrayList<AuthorNode>();
         populate(Magic.DEFAULT_JAVASCRIPT_WAIT);
-        return list;
+        return new ArrayList<AuthorNode>(this.list);
     }
 
     private void populate(int timeoutSeconds) {
@@ -78,15 +86,37 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
 
         WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
         wait.until(ExpectedConditions
-                   .presenceOfElementLocated(By.xpath(XPATH_TOP10_ARTICLE_A)));
+                   .presenceOfElementLocated(By.xpath(XPATH_AUTHOR_LINK_A)));
 
         List<WebElement> aList =
-                driver.findElements(By.xpath(XPATH_TOP10_ARTICLE_A));
+                driver.findElements(By.xpath(XPATH_AUTHOR_LINK_A));
 
         for (WebElement e : aList) {
             System.out.println("  " + e.getText());
-            // Returns the amount of authors succ. processed.
-            max -= processPaper(e.getAttribute("href"), timeoutSeconds);
+            String raw = e.getAttribute("href");
+            int i1 = raw.indexOf("id=");
+
+            if (i1 < 0) {
+                continue;
+            }
+
+            int i2 = raw.indexOf("&");
+
+            if (i2 < 0 || i2 < i1) {
+                continue;
+            }
+
+            String id = raw.substring(i1 + "id=".length(), i2);
+            AuthorNode authorNode = new AuthorNode(id);
+            authorNode.setName(e.getText().trim());
+
+            if (db != null) {
+                db.addAuthor(authorNode.getId(), authorNode.getName());
+                processAuthor(id, timeoutSeconds);
+            }
+
+            this.list.add(authorNode);
+            --max;
 
             if (max <= 0) {
                 return;
@@ -94,21 +124,100 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
         }
     }
 
-    private int processPaper(String url, int timeoutSeconds) {
+    /**
+     * Load all the papers written by author id <code>id</code> and their
+     * BibTex-references.
+     *
+     * @param id the ACM DL id of an author.
+     */
+    private void processAuthor(String id, int timeoutSeconds) {
+        String url = Magic.URL_BASE + "/"
+                + Magic.URL_AUTHOR_PAGE_SCRIPT_NAME
+                + "?id=" + id + Magic.URL_GET_ALL_ARGS;
         WebDriver driver = new HtmlUnitDriver(true);
         driver.get(url);
 
         WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
         wait.until(ExpectedConditions
-                   .presenceOfElementLocated(By.xpath(XPATH_AUTHORS_A)));
+                   .presenceOfElementLocated(By.xpath(XPATH_PAPER_LINK_A)));
 
+        List<WebElement> aPapers =
+                driver.findElements(By.xpath(XPATH_PAPER_LINK_A));
 
-        List<WebElement> aList = driver.findElements(By.xpath(XPATH_AUTHORS_A));
-
-        for (WebElement e : aList) {
-            System.out.println("    " + e.getText());
+        for (WebElement e : aPapers) {
+            System.out.println("      > " + e.getText());
+            savePaper(id, e);
         }
 
-        return aList.size();
+        downloadAllBibtexOfAuthor(driver);
     }
+
+    private void downloadAllBibtexOfAuthor(WebDriver driver) {
+        WebElement link = driver.findElement(By.linkText(LINKTEXT_BIBTEX));
+
+        if (link == null) {
+            return;
+        }
+
+        link.click();
+
+        List<WebElement> pres = driver.findElements(By.tagName("pre"));
+
+        if (pres == null) {
+            return;
+        }
+
+        for (WebElement e : pres) {
+            db.addBibtexToPaper(e.getAttribute("id"), e.getText().trim());
+        }
+    }
+
+    private void savePaper(String authorId, WebElement a) {
+        String url = a.getAttribute("href");
+        int i1 = url.indexOf("id=");
+
+        if (i1 < 0) {
+            return;
+        }
+
+        int i2 = url.indexOf("&");
+
+        if (i2 < 0 || i2 < i1) {
+            return;
+        }
+
+        String paperId = url.substring(i1, i2).trim();
+        db.addPaper(paperId, a.getText().trim());
+        db.associate(authorId, paperId);
+    }
+
+//    private int processPaper(String url, int timeoutSeconds) {
+//
+//        WebDriver driver = new HtmlUnitDriver(true);
+//        driver.get(url);
+//
+//        WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
+//        wait.until(ExpectedConditions
+//                   .presenceOfElementLocated(By.xpath(XPATH_AUTHORS_A)));
+//
+//
+//        List<WebElement> aList = driver.findElements(By.xpath(XPATH_AUTHORS_A));
+//        int authorsProcessed = 0;
+//
+//        for (WebElement e : aList) {
+//            System.out.println("    " + e.getText());
+//
+//            if (processAuthor(e.getAttribute("href"), timeoutSeconds)) {
+//                ++authorsProcessed;
+//            }
+//        }
+//
+//        return authorsProcessed;
+//    }
+
+//    private boolean processAuthor(String url, int timeoutSeconds) {
+//        WebDriver driver = new HtmlUnitDriver(true);
+//        driver.get("");
+//        return true;
+//    }
 }

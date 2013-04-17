@@ -22,6 +22,8 @@ import static org.junit.Assert.*;
 public class CrawlerThreadTest {
 
     private static final int THREADS = 2;
+    private static final int NODE_AMOUNT = 10000;
+    private static final float LF = 0.15f;
 
     private static List<GraphNode> graph;
     private static Random r;
@@ -29,24 +31,12 @@ public class CrawlerThreadTest {
     @BeforeClass
     public static void setUpClass() {
         r = new Random(313L);
-        graph = createRandomGraph(2000, r, 0.4f);
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
+        graph = createRandomGraph(NODE_AMOUNT, r, LF);
     }
 
     @Test
     public void mainTest() {
+        System.out.println("--- main activity");
         List<GraphNode> oneSeed = new LinkedList<GraphNode>();
         ThreadSafeSet<GraphNode> visitedSet = new ThreadSafeSet<GraphNode>();
 
@@ -82,11 +72,11 @@ public class CrawlerThreadTest {
 
         ta = System.currentTimeMillis();
 
-        for (CrawlerThread c : crawlers) {
+        for (CrawlerThread<?> c : crawlers) {
             c.start();
         }
 
-        for (CrawlerThread c : crawlers) {
+        for (CrawlerThread<?> c : crawlers) {
             try {
                 c.join();
             } catch(InterruptedException e) {
@@ -102,7 +92,7 @@ public class CrawlerThreadTest {
 
         long l = 0L;
 
-        for (CrawlerThread c : crawlers) {
+        for (CrawlerThread<?> c : crawlers) {
             l += c.getCrawlCount();
         }
 
@@ -112,27 +102,56 @@ public class CrawlerThreadTest {
     }
 
     /**
-     * Test of run method, of class CrawlerThread.
-     */
-    @Test
-    public void testRun() {
-        System.out.println("run");
-    }
-
-    /**
      * Test of stopCrawling method, of class CrawlerThread.
      */
     @Test
     public void testStopCrawling() {
-        System.out.println("stopCrawling");
-    }
+        System.out.println("--- stopCrawling()");
 
-    /**
-     * Test of getCrawlCount method, of class CrawlerThread.
-     */
-    @Test
-    public void testGetCrawlCount() {
-        System.out.println("getCrawlCount");
+        CrawlerThread<?>[] crawlers = new CrawlerThread<?>[THREADS];
+        List<GraphNode> seeds = sampleSeeds(graph, r, THREADS);
+        ThreadSafeSet<GraphNode> visitedSet =new ThreadSafeSet<GraphNode>();
+
+        for (int i = 0; i < THREADS; ++i) {
+            List<GraphNode> seedList = new ArrayList<GraphNode>(1);
+            seedList.add(seeds.get(i));
+
+            crawlers[i] = new CrawlerThread<GraphNode>(
+                    seedList,
+                    visitedSet,
+                    Long.MAX_VALUE
+                    );
+        }
+
+        for (CrawlerThread<?> c : crawlers) {
+            c.start();
+        }
+
+        for (CrawlerThread<?> c : crawlers) {
+            c.stopCrawling();
+        }
+
+        for (CrawlerThread<?> c : crawlers) {
+            try {
+                c.join();
+            } catch(InterruptedException e) {
+                System.err.println(e);
+            }
+        }
+
+        System.out.println("visitedSet.size(): " + visitedSet.size());
+
+        // Didn't crawled the entire graph.
+        assertTrue(visitedSet.size() < NODE_AMOUNT);
+
+
+        long l = 0L;
+
+        for (CrawlerThread<?> c : crawlers) {
+            l += c.getCrawlCount();
+        }
+
+        assertEquals(l, visitedSet.size());
     }
 
     private static List<GraphNode> createRandomGraph(int size,

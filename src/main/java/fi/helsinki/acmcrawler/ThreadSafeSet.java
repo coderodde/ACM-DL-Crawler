@@ -4,8 +4,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
-
 /**
+ * This class models a simple generic hash set with only two major operations:
+ * <ul>
+ *  <li><code>add(T)</code> adds an element if not present,
+ *  <li><code>containsAndAdd(T)</code> atomic test and add.
+ * </ul>
+ *
+ * All access is synchronized.
+ *
+ * @param T the type of elements.
  *
  * @author Rodion Efremov
  * @version I
@@ -30,6 +38,8 @@ public class ThreadSafeSet<T> {
         this(DEFAULT_SIZE, DEFAULT_LOAD_FACTOR);
     }
 
+    /*
+    //// THIS IS SLOOOOW ON MAC
     public boolean add(T element) {
         mutex.acquireUninterruptibly();
         boolean ret = set.add(element);
@@ -54,5 +64,23 @@ public class ThreadSafeSet<T> {
         int sz = set.size();
         mutex.release();
         return sz;
+    }*/
+
+    public synchronized boolean add(T element) {
+        return set.add(element);
+    }
+
+    public synchronized boolean containsAndAdd(T element) {
+        boolean contains = set.contains(element);
+
+        if (contains == false) {
+            set.add(element);
+        }
+
+        return contains;
+    }
+
+    public synchronized int size() {
+        return set.size();
     }
 }

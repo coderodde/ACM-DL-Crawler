@@ -23,9 +23,6 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
     private static final String XPATH_JOURNAL_A =
             "//a[contains(@href,'pub.cfm?id=')]";
 
-//    private static final String XPATH_TOP10_ARTICLE_A =
-//            "//div[@id='toShowTop10']/ol/li/a";
-
     private static final String XPATH_AUTHORS_A =
     "//a[contains(@href,'results.cfm?') and contains(@title, 'Search for')]";
 
@@ -168,7 +165,8 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
         }
 
         for (WebElement e : pres) {
-            db.addBibtexToPaper(e.getAttribute("id"), e.getText().trim());
+            db.addBibtexToPaper(e.getAttribute("id").trim(),
+                                e.getText().trim());
         }
     }
 
@@ -186,38 +184,8 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
             return;
         }
 
-        String paperId = url.substring(i1, i2).trim();
+        String paperId = url.substring(i1 + "id=".length(), i2).trim();
         db.addPaper(paperId, a.getText().trim());
         db.associate(authorId, paperId);
     }
-
-//    private int processPaper(String url, int timeoutSeconds) {
-//
-//        WebDriver driver = new HtmlUnitDriver(true);
-//        driver.get(url);
-//
-//        WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
-//        wait.until(ExpectedConditions
-//                   .presenceOfElementLocated(By.xpath(XPATH_AUTHORS_A)));
-//
-//
-//        List<WebElement> aList = driver.findElements(By.xpath(XPATH_AUTHORS_A));
-//        int authorsProcessed = 0;
-//
-//        for (WebElement e : aList) {
-//            System.out.println("    " + e.getText());
-//
-//            if (processAuthor(e.getAttribute("href"), timeoutSeconds)) {
-//                ++authorsProcessed;
-//            }
-//        }
-//
-//        return authorsProcessed;
-//    }
-
-//    private boolean processAuthor(String url, int timeoutSeconds) {
-//        WebDriver driver = new HtmlUnitDriver(true);
-//        driver.get("");
-//        return true;
-//    }
 }

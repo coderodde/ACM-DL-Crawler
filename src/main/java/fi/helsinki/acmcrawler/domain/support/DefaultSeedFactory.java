@@ -23,9 +23,6 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
     private static final String XPATH_JOURNAL_A =
             "//a[contains(@href,'pub.cfm?id=')]";
 
-    private static final String XPATH_AUTHORS_A =
-    "//a[contains(@href,'results.cfm?') and contains(@title, 'Search for')]";
-
     private static final String XPATH_AUTHOR_LINK_A =
             "//a[contains(@href,'author_page.cfm?id=')]";
 

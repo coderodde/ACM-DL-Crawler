@@ -52,6 +52,10 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
             T node = queue.removeFirst();
             Expand(node);
 
+//            if (visited.size() >= max) {
+//                stop = true;
+//            }
+
             if (stop) {
                 return;
             }

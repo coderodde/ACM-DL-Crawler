@@ -97,7 +97,7 @@ public class AuthorNode extends Node<AuthorNode> {
                 "See all colleagues of this author";
 
         private static final String XPATH_PAPER_A =
-                "//a[contains(@href,'citation.cfm')]";
+                "//a[starts-with(@href,'citation.cfm')]";
 
         private static final String TEXT_LINK_BIBTEX =
                 "BibTeX";

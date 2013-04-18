@@ -1,7 +1,5 @@
 package fi.helsinki.acmcrawler.domain;
 
-import java.util.EnumMap;
-
 /**
  *
  * @author Rodion Efremov

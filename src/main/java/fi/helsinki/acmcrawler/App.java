@@ -5,18 +5,11 @@ import fi.helsinki.acmcrawler.domain.SeedFactory;
 import fi.helsinki.acmcrawler.domain.support.AuthorNode;
 import fi.helsinki.acmcrawler.domain.support.DefaultSeedFactory;
 import fi.helsinki.acmcrawler.storage.CollaborationGraphDB;
-import fi.helsinki.acmcrawler.storage.support.BibTexSQLiteDB;
 import fi.helsinki.acmcrawler.storage.support.CollaborationSQLiteDB;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * The top-level code.
@@ -132,7 +125,6 @@ public class App extends Thread {
 
         System.out.println("DONE: Crawled for " + total + " author nodes.");
         System.exit(0);
-        //Runtime.getRuntime().addShutdownHook(new App(crawlers));
     }
 
     private static int dump(String dbFilename) {
@@ -203,117 +195,6 @@ public class App extends Thread {
         }
 
         return crawlers;
-    }
-
-//    private static int doCrawl(BibTexSQLiteDB db, WebDriver wd, long max) {
-//        wd.get(URL_BASE + "/" + Magic.URL_JOURNAL_LIST_PAGE);
-//        List<WebElement> elems = wd.findElements(
-//                By.xpath("html/body/div/table/tbody/tr/td[2]/a")
-//                );
-//
-//        for (WebElement we : elems) {
-//            System.out.println(we.getText());
-//            HtmlUnitDriver journalDriver = new HtmlUnitDriver(true);
-//            journalDriver.get(we.getAttribute("href"));
-//
-//            WebDriverWait wait = new WebDriverWait(journalDriver, 60);
-//            wait.until(ExpectedConditions
-//                       .presenceOfElementLocated(By.id("toShowTop10")));
-//
-//            max -= crawlJournal(db, journalDriver, max);
-//
-//            if (max <= 0) {
-//                return 0;
-//            }
-//        }
-//
-//        return 0;
-//    }
-
-    private static long crawlJournal(BibTexSQLiteDB db, WebDriver wd, long max) {
-        if (max < 1) {
-            return 0;
-        }
-
-        List<WebElement> aElements = wd.findElements(By.xpath(
-                "//div[@id='toShowTop10']/ol/li/a"));
-
-        long crawled = 0;
-
-        if (aElements.size() > 0) {
-            for (WebElement we : aElements) {
-                processPaperPage(we.getAttribute("href"), db);
-                ++crawled;
-
-                if (crawled >= max) {
-                    return crawled;
-                }
-            }
-        }
-
-        return 0;
-    }
-
-    private static void processPaperPage(String url, BibTexSQLiteDB db) {
-        HtmlUnitDriver driver = new HtmlUnitDriver(true); // enable JS.
-        driver.get(url);
-
-        WebDriverWait wait = new WebDriverWait(driver, 60);
-        wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.xpath("//a[text()=\"BibTeX\"]")
-                ));
-
-        WebElement a = driver.findElement(By.xpath("//a[text()=\"BibTeX\"]"));
-        String href = a.getAttribute("href");
-        String bibtexStr = "bibtex";
-
-        int i1 = href.indexOf("exportformats.cfm?id=");
-
-        if (i1 >= 0) {
-            int i2 = href.indexOf(bibtexStr);
-
-            if (i2 >= 0 && i2 > i1) {
-                String bibtexUrl = URL_BASE + "/" +
-                        href.substring(i1, i2 + bibtexStr.length());
-
-                getBibTeXReference(bibtexUrl, db);
-            }
-        }
-    }
-
-    public static void getBibTeXReference(String url, BibTexSQLiteDB db) {
-        WebDriver driver = new HtmlUnitDriver();
-        driver.get(url);
-        WebElement pre = driver.findElement(By.tagName("pre"));
-
-        if (pre == null) {
-            return;
-        }
-
-        String ref = pre.getText();
-        String name = parseNameOfBibtexRefText(ref);
-
-        if (!db.contains(name)) {
-            db.add(name, ref);
-            System.out.println("Added: " + ref);
-        }
-    }
-
-    private static String parseNameOfBibtexRefText(String s) {
-        int i1 = s.indexOf("{");
-
-        if (i1 < 0) {
-            return null;
-        }
-
-        int i2 = s.indexOf(",");
-
-        if (i2 < 0 || i1 > i2) {
-            return null;
-        }
-
-        String name = s.substring(i1, i2);
-        return name.isEmpty() ? null : name;
     }
 
     private static Map<String, String> processCommandLine(String... args) {

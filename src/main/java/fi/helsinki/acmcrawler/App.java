@@ -19,6 +19,8 @@ import java.util.TreeMap;
  */
 public class App extends Thread {
 
+    private static final int SEED_COUNT = 1000;
+
     private CrawlerThread<?>[] crawlers;
 
     public App(CrawlerThread<?>[] crawlers) {
@@ -176,15 +178,29 @@ public class App extends Thread {
                        int threads,
                        CollaborationGraphDB<AuthorNode> db,
                        SeedFactory<AuthorNode> seedFactory) {
-        List<AuthorNode> seedList = seedFactory.get(threads);
+        List<AuthorNode> seedList =
+                //seedFactory.get(Math.max(threads, SEED_COUNT));
+                seedFactory.get(threads);
+        
+        List<List<AuthorNode>> seedListPartition
+                = trySplitEvenly(seedList, threads);
+
+        if (threads > seedListPartition.size()) {
+            System.out.println(
+                    "Thread count adjusted from " + threads +
+                    " to " + seedListPartition.size()
+                    );
+
+            threads = seedListPartition.size();
+        }
+
+
         CrawlerThread<?>[] crawlers = new CrawlerThread<?>[threads];
         ThreadSafeSet<AuthorNode> visitedSet = new ThreadSafeSet<AuthorNode>();
 
         for (int i = 0; i < threads; ++i) {
-            List<AuthorNode> arg1 = new ArrayList<AuthorNode>();
-            arg1.add(seedList.get(i));
             crawlers[i] = new CrawlerThread<AuthorNode>(
-                    arg1,
+                    seedListPartition.get(i),
                     visitedSet,
                     maxNodes
                     );
@@ -195,6 +211,29 @@ public class App extends Thread {
         }
 
         return crawlers;
+    }
+
+    private static <T> List<List<T>> trySplitEvenly(List<T> l, int parts) {
+        List<List<T>> ret = new ArrayList<List<T>>(parts);
+
+        for (int i = 0; i < parts; ++i) {
+            ret.add(new ArrayList<T>(l.size() / parts + 1));
+        }
+
+        int i = 0;
+
+        for (T element : l) {
+            ret.get(i % parts).add(element);
+            i++;
+        }
+
+        for (int j = ret.size() - 1; j >= 0; --j) {
+            if (ret.get(j).isEmpty()) {
+                ret.remove(j);
+            }
+        }
+
+        return ret;
     }
 
     private static Map<String, String> processCommandLine(String... args) {

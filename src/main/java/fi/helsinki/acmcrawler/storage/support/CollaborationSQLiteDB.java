@@ -52,7 +52,10 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             conn.commit();
             return true;
         } catch (SQLException e) {
-            System.err.println(e);
+            System.err.println(
+                    "Error: addAuthor(" + id + ", " + name + "): " + e
+                    );
+            
             return false;
         }
     }
@@ -69,7 +72,10 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             conn.commit();
             return true;
         } catch (SQLException e) {
-            System.err.println(e);
+            System.err.println(
+                    "Error: addPaper(" + id + ", " + name + "): " + e
+                    );
+
             return false;
         }
     }
@@ -86,7 +92,10 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             conn.commit();
             return true;
         } catch(SQLException e) {
-            System.err.println(e);
+
+            System.err.println(
+                    "Error: addBibtexToPaper(" + id + ", " +
+                    bibtex + "): "+ e);
             return false;
         }
     }
@@ -103,7 +112,9 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             conn.commit();
             return true;
         } catch (SQLException e) {
-            System.err.println(e);
+            System.err.println(
+                    "Error: associate(" + authorId + ", " + paperId + "): "
+                    + e);
             return false;
         }
     }

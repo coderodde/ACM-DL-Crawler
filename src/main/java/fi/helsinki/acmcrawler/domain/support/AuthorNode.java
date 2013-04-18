@@ -182,10 +182,9 @@ public class AuthorNode extends Node<AuthorNode> {
                     continue;
                 }
 
-                String id = href.substring(i1 + "id=".length(), i2);
-
+                String id = href.substring(i1 + "id=".length(), i2).trim();
                 AuthorNode neighbor = new AuthorNode(id);
-                neighbor.setName(e.getText());
+                neighbor.setName(e.getText().trim());
                 neighbor.setDb(db);
                 authors.add(neighbor);
 
@@ -227,7 +226,7 @@ public class AuthorNode extends Node<AuthorNode> {
                     continue;
                 }
 
-                String id = href.substring(i1 + "id=".length(), i2);
+                String id = href.substring(i1 + "id=".length(), i2).trim();
                 String name = e.getText().trim();
 
                 if (AuthorNode.this.db.addPaper(id, name)) {
@@ -252,8 +251,8 @@ public class AuthorNode extends Node<AuthorNode> {
             }
 
             for (WebElement e : pres) {
-                AuthorNode.this.db.addBibtexToPaper(e.getAttribute("id"),
-                                                    e.getText());
+                AuthorNode.this.db.addBibtexToPaper(e.getAttribute("id").trim(),
+                                                    e.getText().trim());
             }
         }
     }

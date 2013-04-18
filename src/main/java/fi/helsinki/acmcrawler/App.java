@@ -179,9 +179,9 @@ public class App extends Thread {
                        CollaborationGraphDB<AuthorNode> db,
                        SeedFactory<AuthorNode> seedFactory) {
         List<AuthorNode> seedList =
-                //seedFactory.get(Math.max(threads, SEED_COUNT));
-                seedFactory.get(threads);
-        
+                seedFactory.get(Math.max(threads, SEED_COUNT));
+                //seedFactory.get(threads);
+
         List<List<AuthorNode>> seedListPartition
                 = trySplitEvenly(seedList, threads);
 

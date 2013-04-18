@@ -13,5 +13,6 @@ public interface CollaborationGraphDB<T extends Node<T>> {
     boolean addBibtexToPaper(String id, String bibtex);
     boolean associate(String authorId, String paperId);
 
-    List<T> listAllAuthors();
+    List<T>         listAllAuthors();
+    List<String>    listAllBibtexReferences();
 }

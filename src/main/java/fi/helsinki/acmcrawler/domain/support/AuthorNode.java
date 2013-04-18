@@ -186,6 +186,7 @@ public class AuthorNode extends Node<AuthorNode> {
 
                 AuthorNode neighbor = new AuthorNode(id);
                 neighbor.setName(e.getText());
+                neighbor.setDb(db);
                 authors.add(neighbor);
 
                 if (db != null) {

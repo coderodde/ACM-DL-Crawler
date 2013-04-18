@@ -62,12 +62,4 @@ public class AuthorNodeTest {
 
         assertTrue(neighbors > 0);
     }
-
-    /**
-     * Test of toString method, of class AuthorNode.
-     */
-    @Test
-    public void testToString() {
-        System.out.println("toString(): " + root);
-    }
 }

@@ -154,6 +154,64 @@ public class CrawlerThreadTest {
         assertEquals(l, visitedSet.size());
     }
 
+    @Test
+    public void testParallelCrawlingIsBoundable() {
+        final int BOUND = 5000;
+
+        System.out.println("--- bounded search");
+
+        CrawlerThread<?>[] crawlers = new CrawlerThread<?>[THREADS];
+        List<GraphNode> seeds = sampleSeeds(graph, r, THREADS);
+        ThreadSafeSet<GraphNode> visitedSet =new ThreadSafeSet<GraphNode>();
+
+        assertEquals(visitedSet.size(), 0);
+
+        for (int i = 0; i < THREADS; ++i) {
+            List<GraphNode> seedList = new ArrayList<GraphNode>(1);
+            seedList.add(seeds.get(i));
+
+            crawlers[i] = new CrawlerThread<GraphNode>(
+                    seedList,
+                    visitedSet,
+                    BOUND
+                    );
+        }
+
+        long ta = System.currentTimeMillis();
+
+        for (CrawlerThread<?> c : crawlers) {
+            c.start();
+        }
+
+        for (CrawlerThread<?> c : crawlers) {
+            try {
+                c.join();
+            } catch(InterruptedException e) {
+                System.err.println(e);
+            }
+        }
+
+        long tb = System.currentTimeMillis();
+
+        System.out.println("Crawling in " + THREADS + " threads took " +
+                (tb - ta) + " ms."
+                );
+
+        System.out.println("Nodes: " + visitedSet.size() + ", bound: " + BOUND);
+
+        assertEquals(visitedSet.size(), BOUND);
+
+        long l = 0L;
+
+        for (CrawlerThread<?> c : crawlers) {
+            l += c.getCrawlCount();
+        }
+
+        System.out.println("Sum of crawl counters: " + l);
+
+        assertEquals(l, BOUND);
+    }
+
     private static List<GraphNode> createRandomGraph(int size,
                                                      Random r,
                                                      float lf) {

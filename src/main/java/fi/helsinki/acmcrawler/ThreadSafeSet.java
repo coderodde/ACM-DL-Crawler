@@ -70,11 +70,16 @@ public class ThreadSafeSet<T> {
         return set.add(element);
     }
 
-    public synchronized boolean containsAndAdd(T element) {
+    public synchronized boolean containsAndAddBounded(T element, long bound) {
         boolean contains = set.contains(element);
 
         if (contains == false) {
-            set.add(element);
+            if (set.size() < bound) {
+                set.add(element);
+            } else {
+                // No room. Pretend to already have the element.
+                return true;
+            }
         }
 
         return contains;

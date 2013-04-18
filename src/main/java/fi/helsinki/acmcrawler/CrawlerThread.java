@@ -62,7 +62,7 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
 
     private void Expand(T v) {
         for (T u : v) {
-            if (crawled >= max) {
+            if (visited.size() >= max) {
                 stop = true;
                 return;
             }
@@ -72,7 +72,7 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
                 return;
             }
 
-            if (visited.containsAndAdd(u) == false) {
+            if (visited.containsAndAddBounded(u, max) == false) {
                 // one more node discovered.
                 queue.addLast(u);
                 ++crawled;

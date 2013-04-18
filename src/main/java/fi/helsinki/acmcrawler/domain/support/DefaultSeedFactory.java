@@ -106,6 +106,7 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
             String id = raw.substring(i1 + "id=".length(), i2);
             AuthorNode authorNode = new AuthorNode(id);
             authorNode.setName(e.getText().trim());
+            authorNode.setDb(db);
 
             if (db != null) {
                 db.addAuthor(authorNode.getId(), authorNode.getName());

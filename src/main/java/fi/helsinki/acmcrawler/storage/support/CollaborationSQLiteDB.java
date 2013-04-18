@@ -111,11 +111,10 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
     @Override
     public List<AuthorNode> listAllAuthors() {
         List<AuthorNode> list = new ArrayList<AuthorNode>();
-        ResultSet rs = null;
 
         try {
             Statement st = conn.createStatement();
-            rs = st.executeQuery("SELECT * FROM Authors;");
+            ResultSet rs = st.executeQuery("SELECT * FROM Authors;");
 
             while (rs.next()) {
                 AuthorNode node = new AuthorNode(rs.getString("id"));
@@ -124,6 +123,27 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             }
         } catch(SQLException e) {
             System.err.println(e);
+        }
+
+        return list;
+    }
+
+    @Override
+    public List<String> listAllBibtexReferences() {
+        List<String> list = new ArrayList<String>();
+
+        try {
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery(
+                    "SELECT bibtex FROM Papers " +
+                    "WHERE bibtex IS NOT NULL;"
+                    );
+
+            while (rs.next()) {
+                list.add(rs.getString(1));
+            }
+        } catch(SQLException e) {
+           System.err.println(e);
         }
 
         return list;

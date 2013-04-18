@@ -1,8 +1,13 @@
 package fi.helsinki.acmcrawler;
 
 import static fi.helsinki.acmcrawler.Magic.*;
+import fi.helsinki.acmcrawler.domain.SeedFactory;
+import fi.helsinki.acmcrawler.domain.support.AuthorNode;
+import fi.helsinki.acmcrawler.domain.support.DefaultSeedFactory;
+import fi.helsinki.acmcrawler.storage.CollaborationGraphDB;
 import fi.helsinki.acmcrawler.storage.support.BibTexSQLiteDB;
-import java.util.LinkedList;
+import fi.helsinki.acmcrawler.storage.support.CollaborationSQLiteDB;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -19,15 +24,35 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * @author coderodde
  * @version 0.1
  */
-public class App
-{
-    /**
-     * Queue of author URLs.
-     */
-    private static LinkedList<String> Q;
+public class App extends Thread {
 
-    public static void main(String... args)
-    {
+    private CrawlerThread<?>[] crawlers;
+
+    public App(CrawlerThread<?>[] crawlers) {
+        this.crawlers = crawlers;
+    }
+
+    @Override
+    public void run() {
+        long total = 0L;
+
+        for (CrawlerThread<?> t : crawlers) {
+            t.stopCrawling();
+        }
+
+        for (CrawlerThread<?> t : crawlers) {
+            try {
+                t.join();
+                total += t.getCrawlCount();
+            } catch(InterruptedException e) {
+
+            }
+        }
+
+        System.out.println("DONE: Crawled " + total + " authors.");
+    }
+
+    public static void main(String... args) {
         if (args.length == 0) {
             System.out.println(HELP_MSG);
             System.exit(0);
@@ -37,6 +62,29 @@ public class App
 
         for (Map.Entry<String, String> e : m.entrySet()) {
             System.out.println(e);
+        }
+
+        Long max = DEFAULT_MAX;
+        Integer threads = DEFAULT_THREAD_COUNT;
+
+        if (m.containsKey(COMMAND_MAX)) {
+            try {
+                max = Long.parseLong(m.get(COMMAND_MAX));
+            } catch(NumberFormatException e) {
+                System.err.println("Error: " + m.get(COMMAND_MAX) +
+                        ": not an integer.");
+                System.exit(1);
+            }
+        }
+
+        if (m.containsKey(COMMAND_THREADS)) {
+            try {
+                threads = Integer.parseInt(m.get(COMMAND_THREADS));
+            } catch(NumberFormatException e) {
+                System.err.println("Error: " + m.get(COMMAND_THREADS) +
+                        ": not an integer.");
+                System.exit(1);
+            }
         }
 
         if (m.containsKey(COMMAND_UNKNOWN)) {
@@ -53,37 +101,44 @@ public class App
         }
 
         // Try doing crawling.
+        System.out.println(
+                "Going to crawl at most " + max + " authors in " +
+                threads + " threads."
+                );
 
-        Long max = DEFAULT_MAX;
+        CrawlerThread<?>[] crawlers = crawl(
+                m.containsKey(COMMAND_FILE) ?
+                    m.get(COMMAND_FILE) :
+                    DEFAULT_DB_FILE,
+                max,
+                threads
+                );
 
-        if (m.containsKey(COMMAND_MAX)) {
-            try {
-                max = Long.parseLong(m.get(COMMAND_MAX));
-            } catch(NumberFormatException e) {
-                System.err.println("Error: " + m.get(COMMAND_MAX) +
-                        ": not an integer.");
-                System.exit(1);
-            }
+        if (crawlers == null) {
+            System.exit(1);
         }
 
-        System.out.println("Going to crawl at most " + max + " authors.");
+        long total = 0;
 
-        System.exit(crawl(m.containsKey(COMMAND_FILE) ?
-                m.get(COMMAND_FILE) :
-                DEFAULT_DB_FILE,
-                max));
+        for (CrawlerThread<?> t : crawlers) {
+            try {
+                t.join();
+            } catch(InterruptedException e) {
+
+            }
+
+            total += t.getCrawlCount();
+        }
+
+        System.out.println("DONE: Crawled for " + total + " author nodes.");
+        System.exit(0);
+        //Runtime.getRuntime().addShutdownHook(new App(crawlers));
     }
 
     private static int dump(String dbFilename) {
-        BibTexSQLiteDB db = getDB(dbFilename);
+        CollaborationGraphDB<AuthorNode> db = getDB(dbFilename);
 
-        if (db == null) {
-            System.err.println("Error: cannot open the database at file \""
-                    + dbFilename + "\"");
-            return 1;
-        }
-
-        for (String s : db) {
+        for (String s : db.listAllBibtexReferences()) {
             System.out.println(s);
             System.out.println();
         }
@@ -91,58 +146,89 @@ public class App
         return 0;
     }
 
-    private static int crawl(String dbFilename, long max) {
+    private static CrawlerThread<?>[]
+            crawl(String dbFilename,
+                  long max,
+                  int threads) {
         if (max < 1) {
-            return 0;
+            return null;
         }
 
-        Q = new LinkedList<String>();
-        BibTexSQLiteDB db = getDB(dbFilename);
+        if (threads < 1) {
+            threads = 1;
+        }
+
+        CollaborationGraphDB<AuthorNode> db = getDB(dbFilename);
 
         if (db == null) {
             System.err.println("Error: cannot open the database at file \""
                     + dbFilename + "\"");
-            return 1;
+            return null;
         }
 
-        WebDriver wd = new HtmlUnitDriver();
-        return doCrawl(db, wd, max);
+        SeedFactory<AuthorNode> seedFactory = new DefaultSeedFactory(db);
+        return beginCrawl(max, threads, db, seedFactory);
     }
 
-    private static BibTexSQLiteDB getDB(String dbFilename) {
+    private static CollaborationGraphDB<AuthorNode> getDB(String dbFilename) {
         try {
-            return new BibTexSQLiteDB(dbFilename);
+            return new CollaborationSQLiteDB(dbFilename);
         } catch(Exception e) {
             System.err.println(e);
             return null;
         }
-
     }
 
-    private static int doCrawl(BibTexSQLiteDB db, WebDriver wd, long max) {
-        wd.get(URL_BASE + "/" + Magic.URL_JOURNAL_LIST_PAGE);
-        List<WebElement> elems = wd.findElements(
-                By.xpath("html/body/div/table/tbody/tr/td[2]/a")
-                );
+    private static CrawlerThread<?>[]
+            beginCrawl(long maxNodes,
+                       int threads,
+                       CollaborationGraphDB<AuthorNode> db,
+                       SeedFactory<AuthorNode> seedFactory) {
+        List<AuthorNode> seedList = seedFactory.get(threads);
+        CrawlerThread<?>[] crawlers = new CrawlerThread<?>[threads];
+        ThreadSafeSet<AuthorNode> visitedSet = new ThreadSafeSet<AuthorNode>();
 
-        for (WebElement we : elems) {
-            System.out.println(we.getText());
-            HtmlUnitDriver journalDriver = new HtmlUnitDriver(true);
-            journalDriver.get(we.getAttribute("href"));
-
-            WebDriverWait wait = new WebDriverWait(journalDriver, 60);
-            wait.until(ExpectedConditions
-                       .presenceOfElementLocated(By.id("toShowTop10")));
-
-            max -= crawlJournal(db, journalDriver, max);
-
-            if (max <= 0) {
-                return 0;
-            }
+        for (int i = 0; i < threads; ++i) {
+            List<AuthorNode> arg1 = new ArrayList<AuthorNode>();
+            arg1.add(seedList.get(i));
+            crawlers[i] = new CrawlerThread<AuthorNode>(
+                    arg1,
+                    visitedSet,
+                    maxNodes
+                    );
         }
 
-        return 0;
+        for (CrawlerThread<?> c : crawlers) {
+            c.start();
+        }
+
+        return crawlers;
     }
+
+//    private static int doCrawl(BibTexSQLiteDB db, WebDriver wd, long max) {
+//        wd.get(URL_BASE + "/" + Magic.URL_JOURNAL_LIST_PAGE);
+//        List<WebElement> elems = wd.findElements(
+//                By.xpath("html/body/div/table/tbody/tr/td[2]/a")
+//                );
+//
+//        for (WebElement we : elems) {
+//            System.out.println(we.getText());
+//            HtmlUnitDriver journalDriver = new HtmlUnitDriver(true);
+//            journalDriver.get(we.getAttribute("href"));
+//
+//            WebDriverWait wait = new WebDriverWait(journalDriver, 60);
+//            wait.until(ExpectedConditions
+//                       .presenceOfElementLocated(By.id("toShowTop10")));
+//
+//            max -= crawlJournal(db, journalDriver, max);
+//
+//            if (max <= 0) {
+//                return 0;
+//            }
+//        }
+//
+//        return 0;
+//    }
 
     private static long crawlJournal(BibTexSQLiteDB db, WebDriver wd, long max) {
         if (max < 1) {
@@ -246,9 +332,16 @@ public class App
             } else if (args[i].equals(COMMAND_FILE)) {
                 if (i + 1 < args.length) {
                     m.put(COMMAND_FILE, args[i + 1]);
-                    i++; // omit the parameter.
+                    ++i; // omit the parameter.
                 } else {
                     m.put(COMMAND_FILE, null);
+                }
+            } else if (args[i].equals(COMMAND_THREADS)) {
+                if (i + 1 < args.length) {
+                    m.put(COMMAND_THREADS, args[i + 1]);
+                    ++i; // omit the parameter.
+                } else {
+                    m.put(COMMAND_THREADS, null);
                 }
             } else {
                 m.put(COMMAND_UNKNOWN, args[i]);

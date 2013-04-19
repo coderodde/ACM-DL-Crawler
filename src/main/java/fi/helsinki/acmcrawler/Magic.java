@@ -18,7 +18,7 @@ public class Magic {
     public static final String DEFAULT_DB_FILE = "acm_graph.db";
     public static final long   DEFAULT_MAX = Long.MAX_VALUE;
     public static final int    DEFAULT_THREAD_COUNT = 4;
-    public static final int    DEFAULT_JAVASCRIPT_WAIT = 90;
+    public static final int    DEFAULT_JAVASCRIPT_WAIT = 150;
 
     public static final String URL_BASE = "http://dl.acm.org";
     public static final String URL_AUTHOR_PAGE_SCRIPT_NAME = "author_page.cfm";

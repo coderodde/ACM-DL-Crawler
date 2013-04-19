@@ -1,38 +1,56 @@
 package fi.helsinki.acmcrawler;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.util.ArrayList;
+import java.util.List;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
- * Unit test for simple App.
+ *
+ * @author Rodion Efremov
+ * @version I
  */
-public class AppTest
-    extends TestCase
-{
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest( String testName )
-    {
-        super( testName );
-    }
+public class AppTest {
 
     /**
-     * @return the suite of tests being tested
+     * Test of trySplitEvenly method, of class App.
      */
-    public static Test suite()
-    {
-        return new TestSuite( AppTest.class );
-    }
+    @Test
+    public void testTrySplitEvenly() {
+        List<Integer> shit = new ArrayList<Integer>();
 
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp()
-    {
-        assertTrue( true );
+        for (int i = 1; i <= 7; ++i) {
+            shit.add(i);
+        }
+
+        List<List<Integer>> partition = App.trySplitEvenly(shit, 4);
+
+        assertNotNull(partition);
+        assertEquals(partition.size(), 4);
+
+        for (int i = 0; i < 3; ++i) {
+            assertNotNull(partition.get(i));
+            assertEquals(partition.get(i).size(), 2);
+        }
+
+        assertNotNull(partition.get(3));
+        assertEquals(partition.get(3).size(), 1);
+
+        // Test pruning.
+        shit = new ArrayList<Integer>();
+
+        for (int i = 0; i < 3; ++i) {
+            shit.add(i);
+        }
+
+        partition = App.trySplitEvenly(shit, 4);
+
+        assertNotNull(partition);
+        assertEquals(partition.size(), 3);
+
+        for (int i = 0; i < 3; ++i) {
+            assertNotNull(partition.get(i));
+            assertEquals(partition.get(i).size(), 1);
+        }
     }
 }

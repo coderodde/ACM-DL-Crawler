@@ -29,7 +29,11 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
 
     @Override
     public void run() {
+        System.out.println(">> Thread " + this.getName() + " is starting.");
         breadthFirstSearch();
+        System.out.println(
+                ">> Thread " + this.getName() + " is shutting down."
+                );
     }
 
     public void stopCrawling() {

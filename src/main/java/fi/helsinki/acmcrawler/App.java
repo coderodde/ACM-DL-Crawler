@@ -113,22 +113,47 @@ public class App extends Thread {
             System.exit(1);
         }
 
-        long total = 0;
+//        long total = 0;
+//
+//        for (CrawlerThread<?> t : crawlers) {
+//            try {
+//                t.join();
+//            } catch(InterruptedException e) {
+//
+//            }
+//
+//            total += t.getCrawlCount();
+//        }
 
-        for (CrawlerThread<?> t : crawlers) {
-            try {
-                t.join();
-            } catch(InterruptedException e) {
-
-            }
-
-            total += t.getCrawlCount();
-        }
-
-        System.out.println("DONE: Crawled for " + total + " author nodes.");
-        System.exit(0);
+        App app = new App(crawlers);
+        Runtime.getRuntime().addShutdownHook(app); // Just trying to be funky.
+//        System.out.println("DONE: Crawled for " + total + " author nodes.");
+//        System.exit(0);
     }
 
+    public static <T> List<List<T>> trySplitEvenly(List<T> l, int parts) {
+        List<List<T>> ret = new ArrayList<List<T>>(parts);
+
+        for (int i = 0; i < parts; ++i) {
+            ret.add(new ArrayList<T>(l.size() / parts + 1));
+        }
+
+        int i = 0;
+
+        for (T element : l) {
+            ret.get(i % parts).add(element);
+            i++;
+        }
+
+        for (int j = ret.size() - 1; j >= 0; --j) {
+            if (ret.get(j).isEmpty()) {
+                ret.remove(j);
+            }
+        }
+
+        return ret;
+    }
+    
     private static int dump(String dbFilename) {
         CollaborationGraphDB<AuthorNode> db = getDB(dbFilename);
 
@@ -178,8 +203,9 @@ public class App extends Thread {
                        int threads,
                        CollaborationGraphDB<AuthorNode> db,
                        SeedFactory<AuthorNode> seedFactory) {
+        // 3 seeds per each thread.
         List<AuthorNode> seedList =
-                seedFactory.get(Math.max(threads, SEED_COUNT));
+                seedFactory.get(3 * threads);
                 //seedFactory.get(threads);
 
         List<List<AuthorNode>> seedListPartition
@@ -193,7 +219,6 @@ public class App extends Thread {
 
             threads = seedListPartition.size();
         }
-
 
         CrawlerThread<?>[] crawlers = new CrawlerThread<?>[threads];
         ThreadSafeSet<AuthorNode> visitedSet = new ThreadSafeSet<AuthorNode>();
@@ -211,29 +236,6 @@ public class App extends Thread {
         }
 
         return crawlers;
-    }
-
-    private static <T> List<List<T>> trySplitEvenly(List<T> l, int parts) {
-        List<List<T>> ret = new ArrayList<List<T>>(parts);
-
-        for (int i = 0; i < parts; ++i) {
-            ret.add(new ArrayList<T>(l.size() / parts + 1));
-        }
-
-        int i = 0;
-
-        for (T element : l) {
-            ret.get(i % parts).add(element);
-            i++;
-        }
-
-        for (int j = ret.size() - 1; j >= 0; --j) {
-            if (ret.get(j).isEmpty()) {
-                ret.remove(j);
-            }
-        }
-
-        return ret;
     }
 
     private static Map<String, String> processCommandLine(String... args) {

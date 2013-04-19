@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fi.helsinki.acmcrawler.domain.support;
 
 import fi.helsinki.acmcrawler.storage.support.CollaborationSQLiteDB;

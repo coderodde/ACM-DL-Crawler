@@ -153,7 +153,7 @@ public class App extends Thread {
 
         return ret;
     }
-    
+
     private static int dump(String dbFilename) {
         CollaborationGraphDB<AuthorNode> db = getDB(dbFilename);
 
@@ -203,10 +203,7 @@ public class App extends Thread {
                        int threads,
                        CollaborationGraphDB<AuthorNode> db,
                        SeedFactory<AuthorNode> seedFactory) {
-        // 3 seeds per each thread.
-        List<AuthorNode> seedList =
-                seedFactory.get(3 * threads);
-                //seedFactory.get(threads);
+        List<AuthorNode> seedList = seedFactory.get(threads);
 
         List<List<AuthorNode>> seedListPartition
                 = trySplitEvenly(seedList, threads);

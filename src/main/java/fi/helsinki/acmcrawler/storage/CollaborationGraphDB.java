@@ -4,8 +4,10 @@ import fi.helsinki.acmcrawler.domain.Node;
 import java.util.List;
 
 /**
+ * Defines the interface for collaboration graph database.
  *
  * @author rodionefremov
+ * @version I
  */
 public interface CollaborationGraphDB<T extends Node<T>> {
     boolean addAuthor(String id, String name);

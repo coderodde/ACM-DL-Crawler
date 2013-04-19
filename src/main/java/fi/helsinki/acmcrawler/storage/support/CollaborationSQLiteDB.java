@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fi.helsinki.acmcrawler.storage.support;
 
 import fi.helsinki.acmcrawler.domain.support.AuthorNode;
@@ -13,13 +9,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 /**
+ * This class is an implementation of
+ * <tt>CollaborationGraphDB&lt;AuthorNode&gt;</tt> interface relying on SQLite.
  *
  * @author rodionefremov
+ * @version I
  */
 public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
     private Connection conn;
@@ -40,6 +37,14 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
         }
     }
 
+    /**
+     * Stores author credentials.
+     *
+     * @param id the ID of author, must be unique.
+     * @param name the full name of author, must not be <tt>null</tt>.
+     *
+     * @return <tt>true</tt> if and only if succeeded, <tt>false</tt> otherwise.
+     */
     @Override
     public boolean addAuthor(String id, String name) {
         try {
@@ -55,11 +60,19 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             System.err.println(
                     "Error: addAuthor(" + id + ", " + name + "): " + e
                     );
-            
+
             return false;
         }
     }
 
+    /**
+     * Stores a paper.
+     *
+     * @param id the ID of the paper, must be unique.
+     * @param name the name of the paper, must not be <tt>null</tt>.
+     *
+     * @return <tt>true</tt> if and only if succeeded, <tt>false</tt> otherwise.
+     */
     @Override
     public boolean addPaper(String id, String name) {
         try {
@@ -80,6 +93,14 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
         }
     }
 
+    /**
+     * Adds a BibTeX-reference to a paper.
+     *
+     * @param id the ID of the paper.
+     * @param bibtex the reference text.
+     *
+     * @return <tt>true</tt> if and only if succeeded, <tt>false</tt> otherwise.
+     */
     @Override
     public boolean addBibtexToPaper(String id, String bibtex) {
         try {
@@ -92,7 +113,6 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
             conn.commit();
             return true;
         } catch(SQLException e) {
-
             System.err.println(
                     "Error: addBibtexToPaper(" + id + ", " +
                     bibtex + "): "+ e);
@@ -100,6 +120,14 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
         }
     }
 
+    /**
+     * Associates an author with a paper.
+     *
+     * @param authorId the ID of author;
+     * @param paperId the ID of paper;
+     *
+     * @return <tt>true</tt> if and only if succeeded, <tt>false</tt> otherwise.
+     */
     @Override
     public boolean associate(String authorId, String paperId) {
         try {
@@ -119,6 +147,11 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
         }
     }
 
+    /**
+     * Retrieves the list of all authors stored in the DB.
+     *
+     * @return the list of authors.
+     */
     @Override
     public List<AuthorNode> listAllAuthors() {
         List<AuthorNode> list = new ArrayList<AuthorNode>();
@@ -139,6 +172,11 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
         return list;
     }
 
+    /**
+     * Retrieves the list of all BibTeX-references stored in the DB.
+     *
+     * @return the list of BibTeX-references.
+     */
     @Override
     public List<String> listAllBibtexReferences() {
         List<String> list = new ArrayList<String>();
@@ -159,8 +197,9 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
 
         return list;
     }
+
     /**
-     * Opens a connection in this <code>DB</code>.
+     * Opens a connection in this <tt>DB</tt>.
      *
      * @param filename the filename or path for the binary database file.
      */
@@ -174,7 +213,7 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
     }
 
     /**
-     * Check whether this <code>DB</code>-implementation is initialized.
+     * Check whether this <tt>DB</tt>-implementation is initialized.
      */
     private boolean checkDB() {
         try {
@@ -189,7 +228,7 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
     }
 
     /**
-     * Creates the tables in this <code>DB</code>.
+     * Creates the tables in this <tt>DB</tt>.
      */
     private void initialize() throws SQLException {
         Statement st = conn.createStatement();
@@ -220,49 +259,5 @@ public class CollaborationSQLiteDB implements CollaborationGraphDB<AuthorNode> {
                 );
 
         conn.commit();
-    }
-
-    /**
-     * This class comprises the iterator object for <code>SQLiteDB</code>.
-     */
-    private class DBIterator implements Iterator<String> {
-        private boolean nextp = true;
-        private ResultSet rs;
-
-        DBIterator(ResultSet rs) {
-            try {
-                nextp = rs.next();
-            } catch (SQLException ex) {
-                nextp = false;
-            }
-
-            this.rs = rs;
-        }
-
-        public boolean hasNext() {
-            return nextp;
-        }
-
-        public String next() {
-            if (!nextp) {
-                throw new NoSuchElementException("Iteration overflow.");
-            }
-
-            try {
-                String bibtexRef = rs.getString("reftext");
-                nextp = rs.next();
-                return bibtexRef;
-            } catch (SQLException e) {
-                nextp = false;
-            }
-
-            return null;
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException(
-                    "Iterator's remove() not implemented."
-                    );
-        }
     }
 }

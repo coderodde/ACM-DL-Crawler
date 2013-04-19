@@ -14,13 +14,20 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
+ * This class represents a node structure taking place in crawling.
  *
- * @author rodionefremov
+ * @author Rodion Efremov
+ * @version I
  */
 public class AuthorNode extends Node<AuthorNode> {
     private String id;
     private CollaborationGraphDB<AuthorNode> db;
 
+    /**
+     * Construct a new <tt>AuthorNode</tt>.
+     *
+     * @param id the author id, may not be <tt>null</tt>.
+     */
     public AuthorNode(String id) {
         super();
 
@@ -57,7 +64,7 @@ public class AuthorNode extends Node<AuthorNode> {
 
     @Override
     public String toString() {
-        return "[Actor node: id=" + id + " name=\"" + name + "\"]";
+        return "[Actor node: id=" + id + " name=\"" + this.getName() + "\"]";
     }
 
     public String getId() {

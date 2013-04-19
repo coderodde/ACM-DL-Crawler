@@ -1,12 +1,13 @@
 package fi.helsinki.acmcrawler.domain;
 
 /**
+ * Defines the minimum API for crawl graph node.
  *
  * @author Rodion Efremov
  * @version I
  */
 public abstract class Node<T> implements Iterable<T> {
-    protected String name;
+    private String name;
 
     @Override
     abstract public int hashCode();

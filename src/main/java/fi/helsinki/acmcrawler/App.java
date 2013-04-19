@@ -14,13 +14,10 @@ import java.util.TreeMap;
 /**
  * The top-level code.
  *
- * @author coderodde
- * @version 0.1
+ * @author Rodion Efremov
+ * @version I
  */
 public class App extends Thread {
-
-    private static final int SEED_COUNT = 1000;
-
     private CrawlerThread<?>[] crawlers;
 
     public App(CrawlerThread<?>[] crawlers) {
@@ -90,9 +87,20 @@ public class App extends Thread {
 
         if (m.containsKey(COMMAND_DUMP)) {
             // Do DB dumping to stdout.
-            System.exit(dump(m.containsKey(COMMAND_FILE) ?
-                    m.get(COMMAND_FILE) :
-                    DEFAULT_DB_FILE));
+            int ret;
+            String file = DEFAULT_DB_FILE;
+
+            if (m.containsKey(COMMAND_FILE)) {
+                file = m.get(COMMAND_FILE);
+            }
+
+            if (m.containsKey(COMMAND_MAX)) {
+                ret = dump(file, max);
+            } else {
+                ret = dumpAll(file);
+            }
+
+            System.exit(ret);
         }
 
         // Try doing crawling.
@@ -113,24 +121,21 @@ public class App extends Thread {
             System.exit(1);
         }
 
-//        long total = 0;
-//
-//        for (CrawlerThread<?> t : crawlers) {
-//            try {
-//                t.join();
-//            } catch(InterruptedException e) {
-//
-//            }
-//
-//            total += t.getCrawlCount();
-//        }
-
         App app = new App(crawlers);
         Runtime.getRuntime().addShutdownHook(app); // Just trying to be funky.
-//        System.out.println("DONE: Crawled for " + total + " author nodes.");
-//        System.exit(0);
     }
 
+    /**
+     * Splits the argument list as evenly as possible and returns the partition.
+     * If <tt>parts > l.size()</tt>, <tt>l.size()</tt> lists will be returned,
+     * each containing only one element.
+     *
+     * @param <T> the element type.
+     * @param l the list to split.
+     * @param parts the amount of lists to split into.
+     *
+     * @return returns the partition with at most <tt>parts</tt> lists.
+     */
     public static <T> List<List<T>> trySplitEvenly(List<T> l, int parts) {
         List<List<T>> ret = new ArrayList<List<T>>(parts);
 
@@ -154,10 +159,26 @@ public class App extends Thread {
         return ret;
     }
 
-    private static int dump(String dbFilename) {
+    private static int dumpAll(String dbFilename) {
         CollaborationGraphDB<AuthorNode> db = getDB(dbFilename);
 
         for (String s : db.listAllBibtexReferences()) {
+            System.out.println(s);
+            System.out.println();
+        }
+
+        return 0;
+    }
+
+    private static int dump(String dbFilename, long max) {
+        CollaborationGraphDB<AuthorNode> db = getDB(dbFilename);
+
+        for (String s : db.listAllBibtexReferences()) {
+            if (max <= 0) {
+                return 0;
+            }
+
+            --max;
             System.out.println(s);
             System.out.println();
         }

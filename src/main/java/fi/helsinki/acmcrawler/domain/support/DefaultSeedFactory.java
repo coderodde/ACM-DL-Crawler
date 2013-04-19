@@ -1,7 +1,6 @@
 package fi.helsinki.acmcrawler.domain.support;
 
 import fi.helsinki.acmcrawler.Magic;
-import fi.helsinki.acmcrawler.domain.support.AuthorNode;
 import fi.helsinki.acmcrawler.domain.SeedFactory;
 import fi.helsinki.acmcrawler.storage.CollaborationGraphDB;
 import java.util.ArrayList;
@@ -14,6 +13,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
+ * This class implements <tt>SeedFactory&lt;AuthorNode&gt;</tt>.
  *
  * @author Rodion Efremov
  * @version I
@@ -35,10 +35,22 @@ public class DefaultSeedFactory implements SeedFactory<AuthorNode>{
     private List<AuthorNode> list;
     private int max;
 
+    /**
+     * Constructs new instance.
+     *
+     * @param db the DB to work with.
+     */
     public DefaultSeedFactory(CollaborationGraphDB<AuthorNode> db) {
         this.db = db;
     }
 
+    /**
+     * Returns the list of seed notes containing at most <tt>max</tt> elements.
+     *
+     * @param max the upper bound of list size.
+     *
+     * @return the list of seed notes.
+     */
     @Override
     public List<AuthorNode> get(int max) {
         if (this.list != null) {

@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * This class represents a crawling thread effectively utilizing the
+ * breadth-first strategy.
  *
  * @author Rodion Efremov
  * @version I
@@ -19,6 +21,13 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
     private volatile long    crawled;
     private final long       max;
 
+    /**
+     * Constructs a new crawling thread.
+     *
+     * @param seeds the nodes this crawling thread will start from.
+     * @param visited a thread safe set for storing the visited nodes.
+     * @param max the maximum amount of nodes to <strong>reach</strong>.
+     */
     public CrawlerThread(List<T> seeds, ThreadSafeSet<T> visited, long max) {
         this.max = max;
         this.queue = new LinkedList<T>();
@@ -36,10 +45,18 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
                 );
     }
 
+    /**
+     * Asks this thread to stop crawling prematurely.
+     */
     public void stopCrawling() {
         stop = true;
     }
 
+    /**
+     * Returns the amount of nodes this thread reached.
+     *
+     * @return the amount of nodes reached.
+     */
     public long getCrawlCount() {
         if (stop == false) {
             throw new IllegalStateException(
@@ -56,16 +73,12 @@ public class CrawlerThread<T extends Node<T>> extends Thread {
             T node = queue.removeFirst();
             Expand(node);
 
-//            if (visited.size() >= max) {
-//                stop = true;
-//            }
-
             if (stop) {
                 return;
             }
         }
 
-        stop = true; // in case queue.size() > 0 failed, not stop == true.
+        stop = true; // so that getCrawlCount() works.
     }
 
     private void Expand(T v) {

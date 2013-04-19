@@ -3,6 +3,7 @@ package fi.helsinki.acmcrawler.domain;
 import java.util.List;
 
 /**
+ * Defines the API for seed selection and retrieval.
  *
  * @author Rodion Efremov
  * @version I

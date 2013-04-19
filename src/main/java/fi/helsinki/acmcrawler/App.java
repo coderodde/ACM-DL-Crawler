@@ -52,10 +52,6 @@ public class App extends Thread {
 
         Map<String, String> m = processCommandLine(args);
 
-        for (Map.Entry<String, String> e : m.entrySet()) {
-            System.out.println(e);
-        }
-
         Long max = DEFAULT_MAX;
         Integer threads = DEFAULT_THREAD_COUNT;
 
